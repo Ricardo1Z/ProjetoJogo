@@ -22,7 +22,7 @@ personagens_liberados = [
     paladino
 ]
 
-grupo_inimigos = [slime, inseto, goblin]
+grupo_inimigos = [goblin]
 grupo_jogador = []
 
 grupo_jogador.append(guerreiro)
@@ -61,10 +61,10 @@ class Luta():
 
 
                 if combatente in self.grupo_jogador:
-                    print(f'Turno do {combatente.nome}')
                     if combatente.defendendo:
                         combatente.remover_defesa()
 
+                    print(f'Turno do {combatente.nome}')
                     comando = input('Digite uma ação: ')
 
                     if '(' in comando and ')' in comando:
@@ -94,24 +94,26 @@ class Luta():
 
 
                 elif combatente in self.grupo_inimigos:
-                    print(f'Turno do {combatente.nome}')
-
                     if combatente.defendendo:
                         combatente.remover_defesa()
+                    print(f'Turno do {combatente.nome}')
+                    acao = combatente.escolher_acao()
 
-                    acao = random.choices(
-                    ['atacar', 'defender'],
-                    weights=[
-                    combatente.prob_ataque,
-                    100 - combatente.prob_ataque
-                    ])[0]
-                    if acao == 'atacar':
+                    if acao == 'atacar': 
                         alvo = self.escolher_alvo()
+
                         if alvo:
                             combatente.atacar(alvo)
 
                     elif acao == 'defender':
                         combatente.defender()
+
+                    elif acao == 'fugir':
+                        print(f'O {combatente.nome} fugiu da luta!!!')
+                        self.grupo_inimigos.remove(combatente)
+                        self.participantes.remove(combatente)
+
+                    
 
         if not any(personagem.vida > 0 for personagem in self.grupo_jogador):
             print('Você Perdeu!')
@@ -130,4 +132,8 @@ class Luta():
         return None
     
 luta = Luta(grupo_jogador, grupo_inimigos)
+
+luta.rodada()
+
+
 

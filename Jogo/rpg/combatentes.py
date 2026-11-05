@@ -1,6 +1,7 @@
 class Combatente:
-    def __init__(self, nome, vida, ataque, defesa, velocidade):
+    def __init__(self, nome, vida_maxima, vida, ataque, defesa, velocidade):
         self.nome = nome
+        self.vida_maxima= vida_maxima
         self.vida = vida
         self.ataque = ataque
         self.defesa = defesa
