@@ -1,139 +1,138 @@
-from inimigos import *
-from personagens import *
+
 import random
 
-inimigos_disponiveis = {
-    'slime': slime,
-    'inseto': inseto,
-    'aranha': aranha,
-    'goblin': goblin,
-    'golem': golem,
-    'clone': doppelganger,
-    'virus': virus,
-    'dragao': dragao,
-    'compilador': compilador,
-    'bug_original': bug_original
-    }
 
-personagens_liberados = [
-    guerreiro,
-    mago,
-    ladino,
-    paladino
-]
-
-grupo_inimigos = [goblin]
-grupo_jogador = []
-
-grupo_jogador.append(guerreiro)
-
-class Luta():
+class Luta:
     def __init__(self, grupo_jogador, grupo_inimigos):
         self.grupo_jogador = grupo_jogador
         self.grupo_inimigos = grupo_inimigos
 
         self.participantes = grupo_jogador + grupo_inimigos
 
-
-    def ordenar_turnos(self):    
         self.ordem_turnos = sorted(
-    self.participantes, 
-    key=lambda c: c.velocidade,
-    reverse=True
-    )
-        return self.ordem_turnos
+            self.participantes,
+            key=lambda c: c.velocidade,
+            reverse=True
+        )
 
+        self.indice_turno = 0
+        self.tempo_inimigo = 0
+        self.resultado = None
 
-    def rodada(self):
-        while (any(personagem.vida > 0 for personagem in self.grupo_jogador)
-               and
-               any(inimigo.vida > 0 for inimigo in self.grupo_inimigos)):
-            self.ordenar_turnos()
-            for combatente in self.ordem_turnos:
-                if not any(personagem.vida > 0 for personagem in self.grupo_jogador):
-                    break
+    def combatente_atual(self):
+        if self.resultado:
+            return None
 
-                if not any(inimigo.vida > 0 for inimigo in self.grupo_inimigos):
-                    break
+        if not self.ordem_turnos:
+            return None
 
-                if combatente.vida <= 0:
-                    continue
+        return self.ordem_turnos[self.indice_turno]
 
+    def verificar_fim(self):
+        jogadores_vivos = any(
+            p.vida > 0 for p in self.grupo_jogador
+        )
 
-                if combatente in self.grupo_jogador:
-                    if combatente.defendendo:
-                        combatente.remover_defesa()
+        inimigos_vivos = any(
+            i.vida > 0 for i in self.grupo_inimigos
+        )
 
-                    print(f'Turno do {combatente.nome}')
-                    comando = input('Digite uma ação: ')
+        if not jogadores_vivos:
+            self.resultado = "derrota"
 
-                    if '(' in comando and ')' in comando:
-                        partes = comando.split('(')
-                        alvo = partes[1].replace(')', '')
-                        acao = partes[0]
+        elif not inimigos_vivos:
+            self.resultado = "vitoria"
 
-                    else:
-                        acao = comando.replace('()', '')
-                        alvo = None
+    def avancar_turno(self):
+        self.verificar_fim()
 
-                    if acao == 'defender':
-                        combatente.defender()
+        if self.resultado:
+            return
 
-                    elif acao == 'atacar':
-                        inimigo = inimigos_disponiveis.get(alvo)
-                        if inimigo is not None:
-                            if inimigo in self.grupo_inimigos:
-                                combatente.atacar(inimigo)
-                            else:
-                                print('Esse inimigo não está na luta!')
-                        else:
-                            print('Inimigo não encontrado')
+        quantidade = len(self.ordem_turnos)
 
-                    else:
-                        print('Comando não reconhecido!')
+        for _ in range(quantidade):
+            self.indice_turno = (
+                self.indice_turno + 1
+            ) % quantidade
 
+            combatente = self.combatente_atual()
 
-                elif combatente in self.grupo_inimigos:
-                    if combatente.defendendo:
-                        combatente.remover_defesa()
-                    print(f'Turno do {combatente.nome}')
-                    acao = combatente.escolher_acao()
+            if combatente and combatente.vida > 0:
+                return
 
-                    if acao == 'atacar': 
-                        alvo = self.escolher_alvo()
+    def executar_acao_jogador(self, acao, alvo=None):
+        combatente = self.combatente_atual()
 
-                        if alvo:
-                            combatente.atacar(alvo)
+        if combatente not in self.grupo_jogador:
+            return
 
-                    elif acao == 'defender':
-                        combatente.defender()
+        if combatente.vida <= 0:
+            return
 
-                    elif acao == 'fugir':
-                        print(f'O {combatente.nome} fugiu da luta!!!')
-                        self.grupo_inimigos.remove(combatente)
-                        self.participantes.remove(combatente)
+        if acao == "atacar":
+            if alvo not in self.grupo_inimigos:
+                return
 
-                    
+            if alvo.vida <= 0:
+                return
 
-        if not any(personagem.vida > 0 for personagem in self.grupo_jogador):
-            print('Você Perdeu!')
-        elif not any(inimigo.vida > 0 for inimigo in self.grupo_inimigos):
-            print('Você venceu!!!')
+            combatente.atacar(alvo)
 
-    def escolher_alvo(self):
-        personagens_vivos = [
-            personagem for personagem in self.grupo_jogador
-            if personagem.vida > 0
-        ]
-        if personagens_vivos:
-            alvo = random.choice(personagens_vivos)
-            return alvo
+        elif acao == "defender":
+            combatente.defender()
 
-        return None
-    
-luta = Luta(grupo_jogador, grupo_inimigos)
+        else:
+            return
 
-luta.rodada()
+        self.avancar_turno()
+
+    def atualizar(self):
+        self.verificar_fim()
+
+        if self.resultado:
+            return
+
+        combatente = self.combatente_atual()
+
+        if combatente in self.grupo_inimigos:
+            self.tempo_inimigo += 1
+
+            # Espera um pouco antes da ação do inimigo
+            if self.tempo_inimigo >= 45:
+                self.tempo_inimigo = 0
+
+                acao = combatente.escolher_acao()
+
+                if acao == "atacar":
+                    alvos = [
+                        p for p in self.grupo_jogador
+                        if p.vida > 0
+                    ]
+
+                    if alvos:
+                        alvo = random.choice(alvos)
+                        combatente.atacar(alvo)
+
+                elif acao == "defender":
+                    combatente.defender()
+
+                elif acao == "fugir":
+                    print(f"{combatente.nome} fugiu!")
+
+                    self.grupo_inimigos.remove(combatente)
+                    self.ordem_turnos.remove(combatente)
+
+                    if self.indice_turno >= len(self.ordem_turnos):
+                        self.indice_turno = 0
+
+                    self.verificar_fim()
+                    return
+
+                self.avancar_turno()
+        else:
+            self.tempo_inimigo = 0
+
 
 
 
