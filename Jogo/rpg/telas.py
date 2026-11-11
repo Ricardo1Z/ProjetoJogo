@@ -49,9 +49,21 @@ def tela_menu(tela, mouse):
         if botao_m.collidepoint(mouse):
             tela.blit(cursor, (botao_m.left - 35, botao_m.centery - 16))
 
-def tela_selecao(tela, mouse):
 
-    tela.blit(selecao, (0,0))
-    for botao in botoes_selecao:
+def tela_selecao(tela, mouse, selecionados):
+    tela.blit(selecao, (0, 0))
+
+    for i, botao in enumerate(botoes_selecao):
         if botao.collidepoint(mouse):
-            tela.blit(cursor_vertical, (botao.right - 120, botao.centery - 155))
+            tela.blit(
+                cursor_vertical,
+                (botao.right - 120, botao.centery - 155)
+            )
+
+        if i in selecionados:
+            pygame.draw.rect(
+                tela,
+                (0, 255, 0),
+                botao,
+                5
+            )
